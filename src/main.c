@@ -25,6 +25,7 @@
 #define LED0_NODE DT_ALIAS(led0)
 #define LED0	DT_GPIO_LABEL(LED0_NODE, gpios)
 #define PIN	DT_GPIO_PIN(LED0_NODE, gpios)
+#define HOLD_SIZE 200
 
 uint8_t gpsIdentifier[] = {'!', '!', '!', '!', '!', '!', '!', '!', '!', '!', '!', '!', '!', '!', '!', '!'};
 
@@ -78,7 +79,7 @@ bool countDots(const char* array) {
 			count++;
 		}
 	}
-	return count == 6;
+	return count > 4;
 }
 
 bool updatePacket(const char* gps_string) {
@@ -127,26 +128,24 @@ void main(void)
     uart_configure(uart_dev, &uart_cfg);
 
 	int pos = 0;
-	char gps_string[66];
+	char gps_string[HOLD_SIZE];
 
 	int err;
-	// printk("Starting Beacon Demo\n");
 
-	// /* Initialize the Bluetooth Subsystem */
-	// err = bt_enable(bt_ready);	
-
-	// if (err) {
-	// 	printk("Bluetooth init failed (err %d)\n", err);
-	// }	
+	for (int i = 0; i < HOLD_SIZE; i++) {
+		gps_string[i] = '!';
+	}
 
 	while(true) {
+
+			pos = pos % HOLD_SIZE;
 
 			uint8_t rx_data;
 			uart_poll_in(uart_dev, &rx_data);
 
 			if (rx_data == '\n') {
 				
-				if (pos >= 16 && updatePacket(gps_string)) {
+				if (updatePacket(gps_string)) {
 					
 					err = bt_enable(bt_ready);	
 
@@ -155,18 +154,16 @@ void main(void)
 					}	
 						
 				}
-
-				for (int i = 0; i < 66; i++) {
-					gps_string[i] = '\0';
-				}
-
-				pos = 0;
 			}
-			else {
-				gps_string[pos] = rx_data;	
-			}
-
+			
+			gps_string[pos] = rx_data;	
 			pos++;
+
+			if (pos == HOLD_SIZE) {
+				for (int i = 0; i < HOLD_SIZE; i++) {
+					gps_string[i] = '!';
+				}
+			}
 	}
 }
 
