@@ -73,7 +73,7 @@ static void bt_ready(int err)
 	bt_addr_le_to_str(&addr, addr_s, sizeof(addr_s));
 
 	k_sleep(K_MSEC(5000));
-	
+
 	bt_le_adv_stop();
 }
 
@@ -87,29 +87,29 @@ bool countDots(const char* array) {
 	return count > 4;
 }
 
-bool updatePacket(const char* gps_string) {
-	if (countDots(gps_string)) {
+bool updatePacket(const char* gps_string, const uint8_t* rx_data) {
+	// if (countDots(gps_string)) {
 		
-		gpsIdentifier[0] = gps_string[7];
-		gpsIdentifier[1] = gps_string[8];
-		gpsIdentifier[2] = gps_string[9];
-		gpsIdentifier[3] = gps_string[10];
-		gpsIdentifier[4] = gps_string[11];
-		gpsIdentifier[5] = gps_string[12];
-		gpsIdentifier[6] = gps_string[13];
-		gpsIdentifier[7] = gps_string[14];
-		gpsIdentifier[8] = gps_string[15];
-		gpsIdentifier[9] = gps_string[16];
-		gpsIdentifier[10] = gps_string[17];
-		gpsIdentifier[11] = gps_string[18];
-		gpsIdentifier[12] = gps_string[19];
-		gpsIdentifier[13] = gps_string[20];
-		gpsIdentifier[14] = gps_string[21];
-		gpsIdentifier[15] = gps_string[22];
+		gpsIdentifier[0] = rx_data[0];
+		gpsIdentifier[1] = rx_data[1];
+		gpsIdentifier[2] = rx_data[2];
+		gpsIdentifier[3] = rx_data[3];
+		gpsIdentifier[4] = rx_data[4];
+		gpsIdentifier[5] = rx_data[5];
+		gpsIdentifier[6] = rx_data[6];
+		gpsIdentifier[7] = rx_data[7];
+		gpsIdentifier[8] = rx_data[8];
+		gpsIdentifier[9] = rx_data[9];
+		gpsIdentifier[10] = rx_data[10];
+		gpsIdentifier[11] = rx_data[11];
+		gpsIdentifier[12] = rx_data[12];
+		gpsIdentifier[13] = rx_data[13];
+		gpsIdentifier[14] = rx_data[14];
+		gpsIdentifier[15] = rx_data[15];
 		
 		return true;
-	}
-	return false;
+	// }
+	// return false;
 }
 
 
@@ -130,7 +130,8 @@ void main(void)
         .stop_bits = UART_CFG_STOP_BITS_1,
     };
 
-    uart_configure(uart_dev, &uart_cfg);
+    // uart_configure(uart_dev, &uart_cfg);
+
 
 	int pos = 0;
 	char gps_string[HOLD_SIZE];
@@ -143,14 +144,12 @@ void main(void)
 
 	while(true) {
 
-			pos = pos % HOLD_SIZE;
+			uint8_t rx_data[100];
+			uart_fifo_read(uart_dev, rx_data, 100);
 
-			uint8_t rx_data;
-			uart_poll_in(uart_dev, &rx_data);
-
-			if (rx_data == '\n') {
+			if (pos == 99) {
 				
-				if (updatePacket(gps_string)) {
+				if (updatePacket(gps_string, rx_data)) {
 					
 					err = bt_enable(bt_ready);	
 
@@ -158,15 +157,6 @@ void main(void)
 						printk("Bluetooth init failed (err %d)\n", err);
 					}	
 						
-				}
-			}
-			
-			gps_string[pos] = rx_data;	
-			pos++;
-
-			if (pos == HOLD_SIZE) {
-				for (int i = 0; i < HOLD_SIZE; i++) {
-					gps_string[i] = '!';
 				}
 			}
 	}
