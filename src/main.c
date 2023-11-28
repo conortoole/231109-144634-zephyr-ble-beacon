@@ -89,23 +89,32 @@ bool countDots(const char* array) {
 
 bool updatePacket(const char* gps_string, const uint8_t* rx_data) {
 	// if (countDots(gps_string)) {
+
+		int start = 0;
+
+		for (int i = 0; i < 99; i++) {
+			if (rx_data[i] == 'G' && rx_data[i+1] == 'A') {
+				start = i + 2;
+				break;
+			}
+		}
 		
-		gpsIdentifier[0] = rx_data[0];
-		gpsIdentifier[1] = rx_data[1];
-		gpsIdentifier[2] = rx_data[2];
-		gpsIdentifier[3] = rx_data[3];
-		gpsIdentifier[4] = rx_data[4];
-		gpsIdentifier[5] = rx_data[5];
-		gpsIdentifier[6] = rx_data[6];
-		gpsIdentifier[7] = rx_data[7];
-		gpsIdentifier[8] = rx_data[8];
-		gpsIdentifier[9] = rx_data[9];
-		gpsIdentifier[10] = rx_data[10];
-		gpsIdentifier[11] = rx_data[11];
-		gpsIdentifier[12] = rx_data[12];
-		gpsIdentifier[13] = rx_data[13];
-		gpsIdentifier[14] = rx_data[14];
-		gpsIdentifier[15] = rx_data[15];
+		gpsIdentifier[0] = rx_data[start];
+		gpsIdentifier[1] = rx_data[start+1];
+		gpsIdentifier[2] = rx_data[start+2];
+		gpsIdentifier[3] = rx_data[start+3];
+		gpsIdentifier[4] = rx_data[start+4];
+		gpsIdentifier[5] = rx_data[start+5];
+		gpsIdentifier[6] = rx_data[start+6];
+		gpsIdentifier[7] = rx_data[start+7];
+		gpsIdentifier[8] = rx_data[start+8];
+		gpsIdentifier[9] = rx_data[start+9];
+		gpsIdentifier[10] = rx_data[start+10];
+		gpsIdentifier[11] = rx_data[start+11];
+		gpsIdentifier[12] = rx_data[start+12];
+		gpsIdentifier[13] = rx_data[start+13];
+		gpsIdentifier[14] = rx_data[start+14];
+		gpsIdentifier[15] = rx_data[start+15];
 		
 		return true;
 	// }
