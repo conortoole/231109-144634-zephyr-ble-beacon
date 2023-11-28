@@ -9,6 +9,7 @@
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <device.h>
+#include <stdlib.h>
 //#include <stdio.h>
 #include <sys/printk.h>
 #include <sys/util.h>
@@ -25,7 +26,8 @@
 #define LED0	DT_GPIO_LABEL(LED0_NODE, gpios)
 #define PIN	DT_GPIO_PIN(LED0_NODE, gpios)
 
-char gpsIdentifier[] = {'h', 'e', 'l', 'l', 'o'};
+uint8_t gpsIdentifier[] = {'!', '!', '!', '!', '!', '!', '!', '!', '!', '!', '!', '!', '!', '!', '!', '!', '!', '!', '!', '!', '!', '!'};
+bool test = false;
 /*
  * Set Advertisement data. Based on the Eddystone specification:
  * https://github.com/google/eddystone/blob/master/protocol-specification.md
@@ -39,14 +41,26 @@ static const struct bt_data sd[] = {
 
 static void bt_ready(int err)
 {
+	uint8_t temp[16];
+	// temp1[10];
+	//uint8_t temp2[10];
+	int count = 0;
+
+	for (int i = 0; i < 16; i++){
+		temp[count] = gpsIdentifier[i];
+		count++;
+	}
+
 	char addr_s[BT_ADDR_LE_STR_LEN];
 	struct bt_data ad[] = {
 		BT_DATA(BT_DATA_NAME_COMPLETE, DEVICE_NAME, DEVICE_NAME_LEN),
-        BT_DATA(BT_DATA_MANUFACTURER_DATA, gpsIdentifier, sizeof(gpsIdentifier)),
+        BT_DATA(BT_DATA_MANUFACTURER_DATA, temp, 16),
+		//BT_DATA(BT_DATA_MANUFACTURER_DATA, temp1, 10),
+		//BT_DATA(BT_DATA_MANUFACTURER_DATA, temp2, 10),
 	};
 
 	bt_addr_le_t addr = {0};
-	size_t count = 1;
+	size_t count2 = 1;
 
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
@@ -70,7 +84,7 @@ static void bt_ready(int err)
 	 * there is no API to retrieve that.
 	 */
 
-	bt_id_get(&addr, &count);
+	bt_id_get(&addr, &count2);
 	bt_addr_le_to_str(&addr, addr_s, sizeof(addr_s));
 }
 
@@ -79,10 +93,14 @@ void main(void)
 	const struct device *uart_dev;
     uint8_t gps_data[256];
     int gps_data_index = 0;
+	int j = 0;
+	int k = 0;
     //int longitude = 0;
     //int latitude = 0;
-	int count = 0;
+	//int count = 0;
 	bool flag = true;
+	bool foundLat = false;
+	bool foundLong = false;
 
     uart_dev = device_get_binding("UART_0");
     if (!uart_dev) {
@@ -99,36 +117,64 @@ void main(void)
 
     uart_configure(uart_dev, &uart_cfg);
 
-    while (flag) {
+    while(flag) {
 
         uint8_t rx_data;
         if (uart_poll_in(uart_dev, &rx_data) == 0){
-            if (rx_data == '\n') {
-                // End of line, process the complete GPS data
-                gps_data[gps_data_index] = '\0'; // Null-terminate the string
-                printk("GPS Data: %s\n", gps_data);
-                //longitude = gps_data[];
-                // Reset the index for the next set of data
-                gps_data_index = 0;
-            } else {
+            if (foundLat){
                 // Store the received character in the buffer
                 if (gps_data_index < 256 - 1) {
                     gps_data[gps_data_index++] = rx_data;
-					gpsIdentifier[count] = rx_data;
-					count = count + 1;
+					gpsIdentifier[gps_data_index] = rx_data;
+					
                 } else {
                     // Buffer overflow, handle it accordingly
                     printk("GPS Data Buffer Overflow\n");
                     gps_data_index = 0; // Reset the index
                 }
-            }
-        }
-        k_sleep(K_MSEC(1000));  // Sleep for 1 second (adjust as needed)
-		if (count > 5){
-			flag = false;
-		}
-    }
+				
+				if (j > 6){
+					foundLat = false;
+				}
+				j++;
+			}
 
+			if (foundLong){
+                // Store the received character in the buffer
+                if (gps_data_index < 256 - 1) {
+                    gps_data[gps_data_index++] = rx_data;
+					gpsIdentifier[gps_data_index] = rx_data;
+					
+                } else {
+                    // Buffer overflow, handle it accordingly
+                    printk("GPS Data Buffer Overflow\n");
+                    gps_data_index = 0; // Reset the index
+                }
+				
+				if (k > 6){
+					foundLong = false;
+				}
+				k++;
+			}
+
+            if (rx_data == 'A') {
+				foundLat = true;
+			}
+
+			if (rx_data == 'N') {
+				foundLong = true;
+			}
+
+			if (gpsIdentifier[15] != '!'){
+				flag = false;
+			}
+        }
+       // k_sleep(K_MSEC(50));  // Sleep for 1 second (adjust as needed)
+		// if (count > 15){
+		// 	flag = false;
+		// }
+    }
+	test = true;
 	int err;
 	printk("Starting Beacon Demo\n");
 
