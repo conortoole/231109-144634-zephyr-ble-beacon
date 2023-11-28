@@ -92,7 +92,7 @@ bool updatePacket(const char* gps_string, const uint8_t* rx_data) {
 
 		int start = 0;
 
-		for (int i = 0; i < 99; i++) {
+		for (int i = 0; i < 85; i++) {
 			if (rx_data[i] == 'G' && rx_data[i+1] == 'A') {
 				start = i + 2;
 				break;
