@@ -130,14 +130,14 @@ void main(void)
 	char gps_string[66];
 
 	int err;
-	printk("Starting Beacon Demo\n");
+	// printk("Starting Beacon Demo\n");
 
-	/* Initialize the Bluetooth Subsystem */
-	err = bt_enable(bt_ready);	
+	// /* Initialize the Bluetooth Subsystem */
+	// err = bt_enable(bt_ready);	
 
-	if (err) {
-		printk("Bluetooth init failed (err %d)\n", err);
-	}	
+	// if (err) {
+	// 	printk("Bluetooth init failed (err %d)\n", err);
+	// }	
 
 	while(true) {
 
