@@ -26,13 +26,7 @@
 #define LED0	DT_GPIO_LABEL(LED0_NODE, gpios)
 #define PIN	DT_GPIO_PIN(LED0_NODE, gpios)
 
-uint8_t gpsIdentifier[] = {'!', '!', '!', '!', '!', '!', '!', '!', '!', '!', '!', '!', '!', '!', '!', '!', '!', '!', '!', '!', '!', '!'};
-bool test = false;
-/*
- * Set Advertisement data. Based on the Eddystone specification:
- * https://github.com/google/eddystone/blob/master/protocol-specification.md
- * https://github.com/google/eddystone/tree/master/eddystone-url
- */
+uint8_t gpsIdentifier[] = {'!', '!', '!', '!', '!', '!', '!', '!', '!', '!', '!', '!', '!', '!', '!', '!'};
 
 /* Set Scan Response data */
 static const struct bt_data sd[] = {
@@ -42,8 +36,7 @@ static const struct bt_data sd[] = {
 static void bt_ready(int err)
 {
 	uint8_t temp[16];
-	// temp1[10];
-	//uint8_t temp2[10];
+
 	int count = 0;
 
 	for (int i = 0; i < 16; i++){
@@ -54,9 +47,7 @@ static void bt_ready(int err)
 	char addr_s[BT_ADDR_LE_STR_LEN];
 	struct bt_data ad[] = {
 		BT_DATA(BT_DATA_NAME_COMPLETE, DEVICE_NAME, DEVICE_NAME_LEN),
-        BT_DATA(BT_DATA_MANUFACTURER_DATA, temp, 16),
-		//BT_DATA(BT_DATA_MANUFACTURER_DATA, temp1, 10),
-		//BT_DATA(BT_DATA_MANUFACTURER_DATA, temp2, 10),
+        BT_DATA(BT_DATA_MANUFACTURER_DATA, temp, 16)
 	};
 
 	bt_addr_le_t addr = {0};
@@ -68,8 +59,7 @@ static void bt_ready(int err)
 	}
 
 	printk("Bluetooth initialized\n");
-	//setup_advertisement_data(ad, gpsIdentifier);
-	/* Start advertising */
+
 	err = bt_le_adv_start(BT_LE_ADV_NCONN_IDENTITY, ad, ARRAY_SIZE(ad),
 			      sd, ARRAY_SIZE(sd));
 	if (err) {
@@ -77,30 +67,49 @@ static void bt_ready(int err)
 		return;
 	}
 
-
-	/* For connectable advertising you would use
-	 * bt_le_oob_get_local().  For non-connectable non-identity
-	 * advertising an non-resolvable private address is used;
-	 * there is no API to retrieve that.
-	 */
-
 	bt_id_get(&addr, &count2);
 	bt_addr_le_to_str(&addr, addr_s, sizeof(addr_s));
 }
 
+bool countDots(const char* array) {
+	int count = 0;
+	for (int i = 0; array[i] != '\0'; i++) {
+		if (array[i] == '.') {
+			count++;
+		}
+	}
+	return count == 6;
+}
+
+bool updatePacket(const char* gps_string) {
+	if (countDots(gps_string)) {
+		
+		gpsIdentifier[0] = gps_string[7];
+		gpsIdentifier[1] = gps_string[8];
+		gpsIdentifier[2] = gps_string[9];
+		gpsIdentifier[3] = gps_string[10];
+		gpsIdentifier[4] = gps_string[11];
+		gpsIdentifier[5] = gps_string[12];
+		gpsIdentifier[6] = gps_string[13];
+		gpsIdentifier[7] = gps_string[14];
+		gpsIdentifier[8] = gps_string[15];
+		gpsIdentifier[9] = gps_string[16];
+		gpsIdentifier[10] = gps_string[17];
+		gpsIdentifier[11] = gps_string[18];
+		gpsIdentifier[12] = gps_string[19];
+		gpsIdentifier[13] = gps_string[20];
+		gpsIdentifier[14] = gps_string[21];
+		gpsIdentifier[15] = gps_string[22];
+		
+		return true;
+	}
+	return false;
+}
+
+
 void main(void)
 {
 	const struct device *uart_dev;
-    uint8_t gps_data[256];
-    int gps_data_index = 0;
-	int j = 0;
-	int k = 0;
-    //int longitude = 0;
-    //int latitude = 0;
-	//int count = 0;
-	bool flag = true;
-	bool foundLat = false;
-	bool foundLong = false;
 
     uart_dev = device_get_binding("UART_0");
     if (!uart_dev) {
@@ -117,64 +126,9 @@ void main(void)
 
     uart_configure(uart_dev, &uart_cfg);
 
-    while(flag) {
+	int pos = 0;
+	char gps_string[66];
 
-        uint8_t rx_data;
-        if (uart_poll_in(uart_dev, &rx_data) == 0){
-            if (foundLat){
-                // Store the received character in the buffer
-                if (gps_data_index < 256 - 1) {
-                    gps_data[gps_data_index++] = rx_data;
-					gpsIdentifier[gps_data_index] = rx_data;
-					
-                } else {
-                    // Buffer overflow, handle it accordingly
-                    printk("GPS Data Buffer Overflow\n");
-                    gps_data_index = 0; // Reset the index
-                }
-				
-				if (j > 6){
-					foundLat = false;
-				}
-				j++;
-			}
-
-			if (foundLong){
-                // Store the received character in the buffer
-                if (gps_data_index < 256 - 1) {
-                    gps_data[gps_data_index++] = rx_data;
-					gpsIdentifier[gps_data_index] = rx_data;
-					
-                } else {
-                    // Buffer overflow, handle it accordingly
-                    printk("GPS Data Buffer Overflow\n");
-                    gps_data_index = 0; // Reset the index
-                }
-				
-				if (k > 6){
-					foundLong = false;
-				}
-				k++;
-			}
-
-            if (rx_data == 'A') {
-				foundLat = true;
-			}
-
-			if (rx_data == 'N') {
-				foundLong = true;
-			}
-
-			if (gpsIdentifier[15] != '!'){
-				flag = false;
-			}
-        }
-       // k_sleep(K_MSEC(50));  // Sleep for 1 second (adjust as needed)
-		// if (count > 15){
-		// 	flag = false;
-		// }
-    }
-	test = true;
 	int err;
 	printk("Starting Beacon Demo\n");
 
@@ -183,6 +137,36 @@ void main(void)
 
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
+	}	
+
+	while(true) {
+
+			uint8_t rx_data;
+			uart_poll_in(uart_dev, &rx_data);
+
+			if (rx_data == '\n') {
+				
+				if (pos >= 16 && updatePacket(gps_string)) {
+					
+					err = bt_enable(bt_ready);	
+
+					if (err) {
+						printk("Bluetooth init failed (err %d)\n", err);
+					}	
+						
+				}
+
+				for (int i = 0; i < 66; i++) {
+					gps_string[i] = '\0';
+				}
+
+				pos = 0;
+			}
+			else {
+				gps_string[pos] = rx_data;	
+			}
+
+			pos++;
 	}
-	
 }
+
