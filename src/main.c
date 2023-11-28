@@ -64,10 +64,6 @@ static void bt_ready(int err)
 	err = bt_le_adv_start(BT_LE_ADV_NCONN_IDENTITY, ad, ARRAY_SIZE(ad),
 			      sd, ARRAY_SIZE(sd));
 
-	k_sleep(K_MSEC(5000));
-
-	bt_le_adv_stop();
-
 	if (err) {
 		printk("Advertising failed to start (err %d)\n", err);
 		return;
@@ -75,6 +71,10 @@ static void bt_ready(int err)
 
 	bt_id_get(&addr, &count2);
 	bt_addr_le_to_str(&addr, addr_s, sizeof(addr_s));
+
+	k_sleep(K_MSEC(5000));
+	
+	bt_le_adv_stop();
 }
 
 bool countDots(const char* array) {
