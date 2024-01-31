@@ -33,97 +33,103 @@ static const struct bt_data sd[] = {
 	BT_DATA(BT_DATA_NAME_COMPLETE, DEVICE_NAME, DEVICE_NAME_LEN),
 };
 
-static void bt_ready(int err)
-{
-	uint8_t temp[16];
+// static void bt_ready(int err)
+// {
+// 	uint8_t temp[16];
 	
-	int count = 0;
+// 	int count = 0;
 
-	for (int i = 0; i < 16; i++){
-		temp[count] = gpsIdentifier[i];
-		count++;
-	}
+// 	for (int i = 0; i < 16; i++){
+// 		temp[count] = gpsIdentifier[i];
+// 		count++;
+// 	}
 
-	char addr_s[BT_ADDR_LE_STR_LEN];
-	struct bt_data ad[] = {
-		BT_DATA(BT_DATA_NAME_COMPLETE, DEVICE_NAME, DEVICE_NAME_LEN),
-        BT_DATA(BT_DATA_MANUFACTURER_DATA, temp, 16),
-	};
+// 	char addr_s[BT_ADDR_LE_STR_LEN];
+// 	struct bt_data ad[] = {
+// 		BT_DATA(BT_DATA_NAME_COMPLETE, DEVICE_NAME, DEVICE_NAME_LEN),
+//         BT_DATA(BT_DATA_MANUFACTURER_DATA, temp, 16),
+// 	};
 
-	bt_addr_le_t addr = {0};
-	size_t count2 = 1;
+// 	bt_addr_le_t addr = {0};
+// 	size_t count2 = 1;
 
-	if (err) {
-		printk("Bluetooth init failed (err %d)\n", err);
-		return;
-	}
+// 	if (err) {
+// 		printk("Bluetooth init failed (err %d)\n", err);
+// 		return;
+// 	}
 
-	printk("Bluetooth initialized\n");
+// 	printk("Bluetooth initialized\n");
 	
-	/* Start advertising */
-	err = bt_le_adv_start(BT_LE_ADV_NCONN_IDENTITY, ad, ARRAY_SIZE(ad),
-			      sd, ARRAY_SIZE(sd));
-	if (err) {
-		printk("Advertising failed to start (err %d)\n", err);
-		return;
-	}
+// 	/* Start advertising */
+// 	err = bt_le_adv_start(BT_LE_ADV_NCONN_IDENTITY, ad, ARRAY_SIZE(ad),
+// 			      sd, ARRAY_SIZE(sd));
+// 	if (err) {
+// 		printk("Advertising failed to start (err %d)\n", err);
+// 		return;
+// 	}
 
-	bt_id_get(&addr, &count2);
-	bt_addr_le_to_str(&addr, addr_s, sizeof(addr_s));
-}
+// 	bt_id_get(&addr, &count2);
+// 	bt_addr_le_to_str(&addr, addr_s, sizeof(addr_s));
+// }
 
 void main(void)
 {
+	printk("Begin\n");
 	const struct device *uart_dev;
     uint8_t gps_data[256];
+	uint8_t rx_data;
     int gps_data_index = 0;
-	
+	int err = 0;
 	bool flag = true;
-
+	printk("get binding\n");
     uart_dev = device_get_binding("UART_0");
     if (!uart_dev) {
         printk("Error: could not bind to device.\n");
         return;
     }
-
+	printk("binding complete\n");
     struct uart_config uart_cfg = {
         .baudrate = 9600,
         .data_bits = UART_CFG_DATA_BITS_8,
         .parity = UART_CFG_PARITY_NONE,
         .stop_bits = UART_CFG_STOP_BITS_1,
     };
-
-    uart_configure(uart_dev, &uart_cfg);
-
-    while(flag) {
-
-        uint8_t rx_data;
-        if (uart_poll_in(uart_dev, &rx_data) == 0){
-            
-                if (gps_data_index < 256 - 1) {
-                    gps_data[gps_data_index++] = rx_data;
-					gpsIdentifier[gps_data_index] = rx_data;
-					
-                } else {
-                    // Buffer overflow, handle it accordingly
-                    printk("GPS Data Buffer Overflow\n");
-                    gps_data_index = 0; // Reset the index
-                }
+	printk("configure uart\n");
+    err = uart_configure(uart_dev, &uart_cfg);
+	printk("%d", err);
+	printk("top of loop\n");
+    //while(flag) {
+		printk("loop\n");
+		err = uart_poll_in(uart_dev, &rx_data);
+		printk("%d", err);
+        if (err == 0){
+            printk("\n");
+			if (gps_data_index < 256 - 1) {
+				printk("%u", rx_data);
+				gps_data[gps_data_index++] = rx_data;
+				gpsIdentifier[gps_data_index] = rx_data;
 				
-			if (gpsIdentifier[15] != '!'){
-				flag = false;
+			} else {
+				// Buffer overflow, handle it accordingly
+				printk("\n");
+				printk("GPS Data Buffer Overflow\n");
+				gps_data_index = 0; // Reset the index
 			}
+				
+			// if (gpsIdentifier[15] != '!'){
+			// 	flag = false;
+			// }
         }
-    }
+    //}
 	test = true;
-	int err;
-	printk("Starting Beacon Demo\n");
+	//int err;
+	printk("end\n");
 
-	/* Initialize the Bluetooth Subsystem */
-	err = bt_enable(bt_ready);	
+	// /* Initialize the Bluetooth Subsystem */
+	// err = bt_enable(bt_ready);	
     
-	if (err) {
-		printk("Bluetooth init failed (err %d)\n", err);
-	}
+	// if (err) {
+	// 	printk("Bluetooth init failed (err %d)\n", err);
+	// }
 	
 }
