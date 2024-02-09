@@ -77,6 +77,7 @@ void main(void)
 	printk("Hello World\n");
 	const struct device *uart_dev;
     uint8_t gps_data[256];
+	uint8_t identifier[1] = {0,0};
     int gps_data_index = 0;
 	int check = 0;
 	
@@ -108,10 +109,26 @@ void main(void)
 	printk("begin uart parsing\n");
 	printk("Data: ");
     while(flag) {
-
         uint8_t rx_data;
 
         if (uart_poll_in(uart_dev, &rx_data) == 0){
+			identifier[1] = identifier[0];
+			identifier[0] = rx_data;
+				
+			if (identifier[0] == 3 && identifier[1] == 6){
+				flag = false;
+			}
+        }
+		printk("\n");
+    }
+
+	flag = true;
+	while(flag) {
+        uint8_t rx_data;
+
+        if (uart_poll_in(uart_dev, &rx_data) == 0){
+			identifier[1] = identifier[0];
+			identifier[0] = rx_data;
 			if (gps_data_index < 256 - 1) {
 				printk("%u", rx_data);
 				gps_data[gps_data_index++] = rx_data;
@@ -123,24 +140,24 @@ void main(void)
 				gps_data_index = 0; // Reset the index
 			}
 				
-			if (gpsIdentifier[15] != '!'){
+			if (identifier[0] == 3 && identifier[1] == 6){
 				flag = false;
 			}
         }
 		printk("\n");
     }
 
-	test = true;
-	int err;
-	printk("Starting Beacon Demo\n");
-	flag = true;
-	/* Initialize the Bluetooth Subsystem */
-	while(flag){
-		err = bt_enable(bt_ready);	
-	}
+	// test = true;
+	// int err;
+	// printk("Starting Beacon Demo\n");
+	// flag = true;
+	// /* Initialize the Bluetooth Subsystem */
+	// while(flag){
+	// 	err = bt_enable(bt_ready);	
+	// }
     
-	if (err) {
-		printk("Bluetooth init failed (err %d)\n", err);
-	}
+	// if (err) {
+	// 	printk("Bluetooth init failed (err %d)\n", err);
+	// }
 	
 }
