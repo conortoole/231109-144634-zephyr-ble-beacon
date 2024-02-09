@@ -106,14 +106,14 @@ void main(void)
 	}
 
 	printk("begin uart parsing\n");
+	printk("Data: ");
     while(flag) {
 
         uint8_t rx_data;
-		check = uart_poll_in(uart_dev, &rx_data);
-		printk("uart pooling status: %d\n", check);
-        if (check == 0){
+
+        if (uart_poll_in(uart_dev, &rx_data) == 0){
 			if (gps_data_index < 256 - 1) {
-				printk("Data: %u", rx_data);
+				printk("%u", rx_data);
 				gps_data[gps_data_index++] = rx_data;
 				gpsIdentifier[gps_data_index] = rx_data;
 				
