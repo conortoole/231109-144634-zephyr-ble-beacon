@@ -74,48 +74,62 @@ static void bt_ready(int err)
 
 void main(void)
 {
+	printk("Hello World\n");
 	const struct device *uart_dev;
     uint8_t gps_data[256];
     int gps_data_index = 0;
+	int check = 0;
 	
 	bool flag = true;
 
+	printk("attempting to get uart binding\n");
     uart_dev = device_get_binding("UART_0");
     if (!uart_dev) {
         printk("Error: could not bind to device.\n");
         return;
     }
-
+	printk("success\n");
     struct uart_config uart_cfg = {
-        .baudrate = 9600,
+        .baudrate = 115200,
         .data_bits = UART_CFG_DATA_BITS_8,
         .parity = UART_CFG_PARITY_NONE,
         .stop_bits = UART_CFG_STOP_BITS_1,
     };
 
-    uart_configure(uart_dev, &uart_cfg);
+	printk("attempting uart config\n");
+    check = uart_configure(uart_dev, &uart_cfg);
+	if(check != 0){
+		printk("failure\n");
+	}
+	else{
+		printk("success\n");
+	}
 
+	printk("begin uart parsing\n");
     while(flag) {
 
         uint8_t rx_data;
-        if (uart_poll_in(uart_dev, &rx_data) == 0){
-            
-                if (gps_data_index < 256 - 1) {
-					printk("%u", rx_data);
-                    gps_data[gps_data_index++] = rx_data;
-					gpsIdentifier[gps_data_index] = rx_data;
-					
-                } else {
-                    // Buffer overflow, handle it accordingly
-                    printk("GPS Data Buffer Overflow\n");
-                    gps_data_index = 0; // Reset the index
-                }
+		check = uart_poll_in(uart_dev, &rx_data);
+		printk("uart pooling status: %d\n", check);
+        if (check == 0){
+			if (gps_data_index < 256 - 1) {
+				printk("Data: %u", rx_data);
+				gps_data[gps_data_index++] = rx_data;
+				gpsIdentifier[gps_data_index] = rx_data;
+				
+			} else {
+				// Buffer overflow, handle it accordingly
+				printk("GPS Data Buffer Overflow\n");
+				gps_data_index = 0; // Reset the index
+			}
 				
 			if (gpsIdentifier[15] != '!'){
 				flag = false;
 			}
         }
+		printk("\n");
     }
+
 	test = true;
 	int err;
 	printk("Starting Beacon Demo\n");
