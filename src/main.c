@@ -101,6 +101,7 @@ void main(void)
         if (uart_poll_in(uart_dev, &rx_data) == 0){
             
                 if (gps_data_index < 256 - 1) {
+					printk("%u", rx_data);
                     gps_data[gps_data_index++] = rx_data;
 					gpsIdentifier[gps_data_index] = rx_data;
 					
@@ -118,9 +119,11 @@ void main(void)
 	test = true;
 	int err;
 	printk("Starting Beacon Demo\n");
-
+	flag = true;
 	/* Initialize the Bluetooth Subsystem */
-	err = bt_enable(bt_ready);	
+	while(flag){
+		err = bt_enable(bt_ready);	
+	}
     
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
