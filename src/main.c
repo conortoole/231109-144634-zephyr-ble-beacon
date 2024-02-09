@@ -90,7 +90,7 @@ void main(void)
     }
 	printk("success\n");
     struct uart_config uart_cfg = {
-        .baudrate = 115200,
+        .baudrate = 9600,
         .data_bits = UART_CFG_DATA_BITS_8,
         .parity = UART_CFG_PARITY_NONE,
         .stop_bits = UART_CFG_STOP_BITS_1,
